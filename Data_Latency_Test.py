@@ -115,6 +115,12 @@ gr10=GroundStation(name= "Hawaii",
    min_elevation_angle = 25,
    min_access_time= 10
     )
+gr11=GroundStation(name= "Wallops",
+   latitude = 37.94,
+   longitude = -75.46,
+   min_elevation_angle = 25,
+   min_access_time= 10
+    )
 """
 gr11=GroundStation( name= "New Delhi",
                     latitude= 28.6139,
