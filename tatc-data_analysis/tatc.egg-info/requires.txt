@@ -1,0 +1,3 @@
+pydantic
+sgp4
+skyfield

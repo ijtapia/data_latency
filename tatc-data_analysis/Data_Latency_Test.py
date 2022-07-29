@@ -115,12 +115,6 @@ gr10=GroundStation(name= "Hawaii",
    min_elevation_angle = 25,
    min_access_time= 10
     )
-gr11=GroundStation(name= "Wallops",
-   latitude = 37.94,
-   longitude = -75.46,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
 """
 gr11=GroundStation( name= "New Delhi",
                     latitude= 28.6139,
@@ -128,8 +122,8 @@ gr11=GroundStation( name= "New Delhi",
                     min_elevation_angle=25,
                     min_access_time=10
     )
-
 """
+
 """
 gr11=GroundStation( name= "Manila",
                     latitude= 14.599,
@@ -154,7 +148,21 @@ gr11=GroundStation( name= "New Zealand",
                     min_access_time=10
     )
 """
-gr_network=[gr1, gr2, gr3, gr4,gr5, gr6, gr7, gr8, gr9, gr10]
+"""
+gr11=GroundStation( name= "Cotopaxi",
+                    latitude= -0.83,
+                    longitude= -78.66,
+                    min_elevation_angle=25,
+                    min_access_time=10
+    )
+"""
+gr11=GroundStation(name= "Wallops",
+   latitude = 37.94,
+   longitude = -75.46,
+   min_elevation_angle = 25,
+   min_access_time= 10
+    )
+gr_network=[gr1, gr2, gr3, gr4,gr5, gr6, gr7, gr8, gr9, gr10, gr11]
 
 ins=Instrument(name= "Scon1",
      field_of_regard= 20,
