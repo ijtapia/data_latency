@@ -4,18 +4,16 @@ Created on Thu Jun 23 11:45:26 2022
 This script is a test for ground stations and storm simulations
 @author: Josue Tapia
 """
-from tatc.analysis.latency import collect_downlinks, aggregate_downlinks, compute_latency
-from tatc.analysis.coverage import collect_observations
-from tatc.schemas.point import GroundStation
-from tatc.schemas.satellite import Satellite, WalkerConstellation
-from tatc.schemas.instrument import Instrument
-from tatc.schemas.orbit import TwoLineElements
-from tatc.schemas.point import Point
+from tatc_o.analysis.latency import collect_downlinks, aggregate_downlinks, compute_latency
+from tatc_o.analysis.coverage import collect_observations
+
+from tatc_o.schemas.point import Point
 #from tatc.analysis.track import collect_ground_track
 
+from generate_architectures import get_aws_network, add_gr_network,generate_constellation
 
 from storm_analysis.geos_obs import get_observations
-from storm_analysis.func import collect_ground_track
+
 
 from datetime import timezone
 import time
@@ -28,188 +26,63 @@ import datetime as dt
 import pandas as pd
 import contextily as ctx
 import geoplot as gplt
-"""
-gr1=GroundStation(name= "Alaska",
-   latitude = 64.859,
-   longitude = -147.854,
-   min_elevation_angle = 25,
-   min_access_time= 10)
-gr2=GroundStation(name= "Svalbard",
-   latitude = 78.22,
-   longitude = 15.40,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    
-    )
-gr3=GroundStation(name= "McMurdo",
-   latitude = -77.846,
-   longitude = 166.668,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr4=GroundStation(name= "Wallops",
-   latitude = 37.94,
-   longitude = -75.46,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr_network=[gr1, gr2, gr3, gr4]
-"""
-gr1=GroundStation(name= "Oregon",
-   latitude = 43.804,
-   longitude = -120.55,
-   min_elevation_angle = 25,
-   min_access_time= 10)
-gr2=GroundStation(name= "Ohio",
-   latitude = 40.41,
-   longitude = -82.90,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    
-    )
-gr3=GroundStation(name= "Ireland",
-   latitude = 53.1424,
-   longitude = -7.6921,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr4=GroundStation(name= "Stockholm",
-   latitude = 59.3293,
-   longitude = 18.0686,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr5=GroundStation(name= "Bahrain",
-   latitude = 26.0667,
-   longitude = 50.5577,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr6=GroundStation(name= "Seoul",
-   latitude = 37.5665,
-   longitude = 126.97,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr7=GroundStation(name= "Sydney",
-   latitude = -33.8688,
-   longitude = 151.2093,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr8=GroundStation(name= "Cape Town",
-   latitude = -33.91,
-   longitude = 18.42,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr9=GroundStation(name= "Punta Arenas",
-   latitude = -53.163,
-   longitude = -70.91,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr10=GroundStation(name= "Hawaii",
-   latitude = 19.89,
-   longitude = -155.5828,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-"""
-gr11=GroundStation( name= "New Delhi",
-                    latitude= 28.6139,
-                    longitude= 77.209,
-                    min_elevation_angle=25,
-                    min_access_time=10
-    )
-"""
-
-"""
-gr11=GroundStation( name= "Manila",
-                    latitude= 14.599,
-                    longitude= 120.98,
-                    min_elevation_angle=25,
-                    min_access_time=10
-    )
-"""
-"""
-gr11=GroundStation( name= "Fortaleza",
-                    latitude= -3.73,
-                    longitude= -38.52,
-                    min_elevation_angle=25,
-                    min_access_time=10
-    )
-"""
-"""
-gr11=GroundStation( name= "New Zealand",
-                    latitude= -40.9,
-                    longitude= 174.88,
-                    min_elevation_angle=25,
-                    min_access_time=10
-    )
-"""
-"""
-gr11=GroundStation( name= "Cotopaxi",
-                    latitude= -0.83,
-                    longitude= -78.66,
-                    min_elevation_angle=25,
-                    min_access_time=10
-    )
-"""
-gr11=GroundStation(name= "Wallops",
-   latitude = 37.94,
-   longitude = -75.46,
-   min_elevation_angle = 25,
-   min_access_time= 10
-    )
-gr_network=[gr1, gr2, gr3, gr4,gr5, gr6, gr7, gr8, gr9, gr10, gr11]
-
-ins=Instrument(name= "Scon1",
-     field_of_regard= 20,
-     min_access_time= 0,
-     duty_cycle= 1,
-     duty_cycle_scheme= "fixed")
-
-orb=TwoLineElements(type= "tle",
-    tle= [
-        "1 25544U 98067A   22194.89145811  .00006208  00000+0  11693-3 0  9993",
-        "2 25544  51.6431 204.3260 0004839   8.8854  63.9523 15.49933573349324"
-        
-        ])
-
-sat1=Satellite(type= "satellite", 
-   name= "ISS-test",
-   orbit= orb,
-   instruments= [ins])
-instrument={
-    "name": ins.name,
-    "field_of_regard": ins.field_of_regard,
-    "min_access_time": ins.min_access_time,
-    "req_self_sunlit": None,
-    "req_target_sunlit": None
-}
-constellation= WalkerConstellation(
-    name= "ISS_Constellation",
-    type='walker',
-    configuration= 'delta',
-    instruments=[ins],
-    orbit= sat1.orbit,
-    number_satellites= 6,
-    number_planes= 2,
-    relative_spacing= 0.1
-    ).generate_members() #assumes 0 drag coeff.
 
 
+aws_network= get_aws_network() #list of aws ground stations
+
+add_network= add_gr_network()  #list of additional ground stations
+
+## define constellation base design variables
+instrument_for=20
+n_satellites=6
+n_planes=2
+######
 #start= datetime.fromisoformat("2022-05-22T00:00:00+00:00")
 #end= datetime.fromisoformat("2022-05-22T04:00:00+00:00")
 utc = dt.timezone.utc
 start= dt.datetime(2022,5,22,0,0, tzinfo= utc)
-end= dt.datetime(2022,6,23, 0,30, tzinfo=utc)
+end= dt.datetime(2022,5,22, 2,30, tzinfo=utc)
 obs_delta= timedelta(minutes=30)
 
+mission_arch=[{
+    'type': "ground",
+    'name': "AWS network",
+    'satellites': generate_constellation(instrument_for, n_satellites, n_planes),
+    'ground_network': aws_network,
+    'start':start,
+    'end': end,
+    'delta': obs_delta
+    }]
+for gr in add_network:
+    mission_arch.append({'type': "ground",
+    'name': gr.name,
+    'satellites': generate_constellation(instrument_for, n_satellites, n_planes),
+    'ground_network': aws_network +[gr],
+    'start':start,
+    'end': end,
+    'delta': obs_delta})
+    
+for _for in range(30, 90, 10):
+    mission_arch.append({'type': "instrument_FOR",
+    'name': 'Instruments_FOR '+str(_for),
+    'satellites': generate_constellation(_for, n_satellites, n_planes),
+    'ground_network': aws_network,
+    'start':start,
+    'end': end,
+    'delta': obs_delta})
+
+for n_satellites in range(9,30, 3): 
+    mission_arch.append({'type': "number_satellites",
+    'name': 'Constellation_with '+str(n_satellites)+' sats',
+    'satellites': generate_constellation(_for, n_satellites, n_satellites/3),
+    'ground_network': aws_network,
+    'start':start,
+    'end': end,
+    'delta': obs_delta})
+    
 
 #%%
-def constellation_latency(sat1, instrument ,start, end,gr_network,obs_delta):
+def constellation_latency(sat1, instrument, ins,start, end,gr_network,obs_delta):
     test_sat={
         "type": "satellite",
         "name": sat1.name,
@@ -280,27 +153,68 @@ def constellation_latency(sat1, instrument ,start, end,gr_network,obs_delta):
     return results,err_st, downlinks
 #results,err_st = constellation_latency(constellation[3], instrument,start, end, gr_network, obs_delta)
 
+def architecture_analysis(arch):
+    constellation= arch['satellites']
+
+    start= arch['start']
+    end= arch['end']
+    gr_network= arch['ground_network']
+    obs_delta= arch['delta']
+    
+    re_sat=[]
+    err_sat=[]
+    dw=[]
+    tic=time.perf_counter()
+    for sat in constellation:
+        ins= sat.instruments[0]
+        instrument={
+            "name": ins.name,
+            "field_of_regard": ins.field_of_regard,
+            "min_access_time": ins.min_access_time,
+            "req_self_sunlit": None,
+            "req_target_sunlit": None
+        }
+        
+        results,err_st, downlinks = constellation_latency(sat, instrument, ins, start, end, gr_network, obs_delta)
+        re_sat.append(results)
+        err_sat.append(err_st)
+        dw.append(downlinks)
+    latency_data=pd.concat(re_sat, ignore_index=True)
+    downlinks_data=pd.concat(dw, ignore_index=True)
+    err_sat=list(itertools.chain(*err_sat))
+    err=pd.DataFrame(err_sat)
+    err=gpd.GeoDataFrame(err,  geometry= gpd.points_from_xy(err.longitude, err.latitude))
+
+    toc=time.perf_counter()
+    print(f"the simulation took{toc-tic:0.4f} seconds")
+    bg=np.array(list(latency_data.latency))
+    vl=np.percentile(bg, 90)
+
+    return latency_data, downlinks_data, err_sat, vl
+
+#paper discussion: a storm observation is treated as an individual observations by every satellite
+values=[]
+latency_add=[]
+add_downlink=[]
+for arch in mission_arch:
+    latency_data, downlinks_data, err_sat, val=architecture_analysis(arch)
+    values.append({'type': arch['type'],
+                   "latency_90th_hrs": val})
+    latency_add.append(latency_data)
+    add_downlink.append(downlinks_data)
 
 
-re_sat=[]
-err_sat=[]
-dw=[]
-tic=time.perf_counter()
-for sat in constellation:
-    results,err_st, downlinks = constellation_latency(sat, instrument,start, end, gr_network, obs_delta)
-    re_sat.append(results)
-    err_sat.append(err_st)
-    dw.append(downlinks)
-latency_data=pd.concat(re_sat, ignore_index=True)
-downlinks_data=pd.concat(dw, ignore_index=True)
-err_sat=list(itertools.chain(*err_sat))
-err=pd.DataFrame(err_sat)
-err=gpd.GeoDataFrame(err,  geometry= gpd.points_from_xy(err.longitude, err.latitude))
-toc=time.perf_counter()
-print(f"the simulation took{toc-tic:0.4f} seconds")
-#paper discussion: a storm observation is treated as individual observations by every satellite
 
 #%%
+raw_data=latency_add
+for i in range(len(raw_data)):
+    raw_data[i].observed= raw_data[i].observed.apply(lambda r: r.isoformat())
+    raw_data[i].downlinked= raw_data[i].downlinked.apply(lambda r: r.isoformat())
+import json
+feature=json.dumps(raw_data)
+with open('latency_data.txt', 'w') as f:
+     f.write(latency_add)
+"""
 ######################################################
                 ##########################
                 ##### Visualization  #####
@@ -389,6 +303,7 @@ plt.plot()
 bg=np.array(list(latency_data.latency))
 vl=np.percentile(bg, 90)
 print(f"the 90th data_latency percentile is {vl} hours")
+"""
 #%%
 """
 tt_sat={
