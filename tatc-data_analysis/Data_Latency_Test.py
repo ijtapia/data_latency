@@ -28,6 +28,7 @@ import contextily as ctx
 import geoplot as gplt
 
 
+
 aws_network= get_aws_network() #list of aws ground stations
 
 add_network= add_gr_network()  #list of additional ground stations
@@ -206,10 +207,43 @@ for arch in mission_arch:
 
 
 #%%
+###### Visualize architectures
+import matplotlib.pyplot as plt
+import seaborn as sns
+for i in range(len(latency_add)):
+    latency_add[i]['arch_name']= 'arch_'+ str(i+1)
+    latency_add[i]['type']= mission_arch[i]['name']
+csv_fl=pd.concat(latency_add, ignore_index=True)
+csv_fl.to_csv('simulation_results.csv')
+
+data_to_plot={'architecture':[ "arch"+str(i+1) for i in range(len(values))],
+              '90th_latency':[lct['latency_90th_hrs'] for lct in values],
+              'type':[lct['type'] for lct in values]}
+df_plt=pd.DataFrame(data_to_plot)
+sns.scatterplot(data=df_plt, x='architecture', y='90th_latency', hue='type' )
+plt.xticks(rotation=90)
+plt.show()
+
+gr_na=[gro.name for gro in add_network +aws_network ]
+gr_obs_arc=[]
+for i in range(len(latency_add)):
+    st_df=latency_add[i].station_name.value_counts().reset_index(name='observations')
+    
+    st_df['arch']= "arch"+str(i+1)
+    st_df['type']= values[i]["type"]
+    gr_obs_arc.append(st_df)
+gr_obs_arc=pd.concat(gr_obs_arc, ignore_index=True)
+#gr_obs_arc.rename(columns={'index':'gr_name'}) does not work
+sns.scatterplot(data=gr_obs_arc, x='index', y='observations', hue='type') #style='arch'
+plt.xticks(rotation=90)
+plt.xtitle('ground_stations')
+plt.show
+#%%
 raw_data=latency_add
 for i in range(len(raw_data)):
     raw_data[i].observed= raw_data[i].observed.apply(lambda r: r.isoformat())
     raw_data[i].downlinked= raw_data[i].downlinked.apply(lambda r: r.isoformat())
+
 import json
 feature=json.dumps(raw_data)
 with open('latency_data.txt', 'w') as f:
