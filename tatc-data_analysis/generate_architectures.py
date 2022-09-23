@@ -8,7 +8,7 @@ Generates space artchitectures: constellation and ground station network
 from tatc_o.schemas.point import GroundStation
 from tatc_o.schemas.satellite import Satellite, WalkerConstellation
 from tatc_o.schemas.instrument import Instrument
-from tatc_o.schemas.orbit import TwoLineElements
+from tatc_o.schemas.orbit import TwoLineElements, CircularOrbit
 from tatc_o.schemas.point import Point
 
 import datetime as dt
@@ -177,6 +177,37 @@ def generate_constellation(_for,n_satellites, n_planes):
         ).generate_members() #assumes 0 drag coeff.
 
     return constellation_base
+
+def altitude_variation(_for,n_satellites, n_planes,altitude):
+    lead_orbit=CircularOrbit(
+        type= "circular",
+        altitude=altitude, #418km ISS
+        true_anomaly=325.0288,
+        epoch="2022-07-13T21:23:00+00:00",
+        inclination= 51.63,
+        right_ascension_node= 204.326,
+        
+        )
+    ins=Instrument(name= "Scon1",
+          field_of_regard=_for,
+          min_access_time= 0,
+          duty_cycle= 1,
+          duty_cycle_scheme= "fixed")
+    constellation= WalkerConstellation(
+        type="walker",
+        name="ISS-altitude",
+        configuration= "delta",
+        orbit= TwoLineElements(
+            type="tle",
+            tle= lead_orbit.to_tle().tle),
+        number_satellites=n_satellites,
+        number_planes=n_planes,
+        instruments=[ins],
+        relative_spacing= 0.1
+        ).generate_members()
+    
+    return constellation
+    
         
 
 

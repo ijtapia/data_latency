@@ -9,8 +9,8 @@ from tatc_o.analysis.coverage import collect_observations
 
 from tatc_o.schemas.point import Point
 #from tatc.analysis.track import collect_ground_track
-
-from generate_architectures import get_aws_network, add_gr_network,generate_constellation
+from tatc.schemas import Satellite, TwoLineElements, Instrument
+from generate_architectures import get_aws_network, add_gr_network,generate_constellation, altitude_variation
 
 from storm_analysis.geos_obs import get_observations
 
@@ -42,8 +42,9 @@ n_planes=2
 #end= datetime.fromisoformat("2022-05-22T04:00:00+00:00")
 utc = dt.timezone.utc
 start= dt.datetime(2022,5,22,0,0, tzinfo= utc)
-end= dt.datetime(2022,5,22, 2,30, tzinfo=utc)
+end= dt.datetime(2022,6,22, 0,30, tzinfo=utc)
 obs_delta= timedelta(minutes=30)
+
 
 mission_arch=[{
     'type': "ground",
@@ -54,6 +55,7 @@ mission_arch=[{
     'end': end,
     'delta': obs_delta
     }]
+"""
 for gr in add_network:
     mission_arch.append({'type': "ground",
     'name': gr.name,
@@ -80,7 +82,19 @@ for n_satellites in range(9,30, 3):
     'start':start,
     'end': end,
     'delta': obs_delta})
-    
+""" 
+for altitude in range(450, 900, 50 ):
+    mission_arch.append({
+        'type': "altitude",
+        'name': "altitude"+str(altitude),
+        "satellites": altitude_variation(instrument_for, n_satellites, n_planes, altitude*1000),
+        'ground_network': aws_network,
+        'start': start,
+        "end": end,
+        "delta": obs_delta
+        
+        })
+   
 
 #%%
 def constellation_latency(sat1, instrument, ins,start, end,gr_network,obs_delta):
@@ -189,7 +203,7 @@ def architecture_analysis(arch):
     toc=time.perf_counter()
     print(f"the simulation took{toc-tic:0.4f} seconds")
     bg=np.array(list(latency_data.latency))
-    vl=np.percentile(bg, 90)
+    vl=np.percentile(bg, 95)
 
     return latency_data, downlinks_data, err_sat, vl
 
@@ -214,7 +228,7 @@ for i in range(len(latency_add)):
     latency_add[i]['arch_name']= 'arch_'+ str(i+1)
     latency_add[i]['type']= mission_arch[i]['name']
 csv_fl=pd.concat(latency_add, ignore_index=True)
-csv_fl.to_csv('simulation_results.csv')
+csv_fl.to_csv('altitude_variation_results.csv')
 
 data_to_plot={'architecture':[ "arch"+str(i+1) for i in range(len(values))],
               '90th_latency':[lct['latency_90th_hrs'] for lct in values],
